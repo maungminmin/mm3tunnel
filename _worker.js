@@ -17,7 +17,7 @@ export default {
           <meta name="viewport" content="width=device-width, initial-scale=1">
           <style>
               body { margin: 0; background: #0f172a; color: #f8fafc; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-              .card { background: #1e293b; padding: 2rem; border-radius: 1.5rem; text-align: center; max-width: 400px; width: 90%; border: 1px solid #334155; }
+              .card { background: #1e293b; padding: 2rem; border-radius: 1.5rem; text-align: center; max-width: 400px; width: 90%; border: 1px solid #334155; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
               .qr-code { background: white; padding: 10px; border-radius: 10px; margin: 1rem 0; width: 200px; height: 200px; }
               .config-box { background: #0f172a; padding: 10px; border-radius: 8px; font-size: 0.75rem; word-break: break-all; color: #38bdf8; border: 1px dashed #334155; }
               h1 { font-size: 1.4rem; color: #38bdf8; }
@@ -26,7 +26,7 @@ export default {
       <body>
           <div class="card">
               <h1>Node Active</h1>
-              <p>Scan QR for mm3.kktmm.qzz.io</p>
+              <p>Scan QR for ${hostName}</p>
               <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(vlessLink)}" class="qr-code">
               <div class="config-box">${vlessLink}</div>
           </div>
@@ -34,11 +34,11 @@ export default {
       </html>`;
       return new Response(html, { headers: { 'Content-Type': 'text/html' } });
     }
-    return await vlessOverWSHandler(request, env);
+    return await handleVLESS(request, env);
   }
 };
 
-async function vlessOverWSHandler(request, env) {
+async function handleVLESS(request, env) {
   const webSocketPair = new WebSocketPair();
   const [client, server] = Object.values(webSocketPair);
   server.accept();
@@ -66,8 +66,10 @@ async function vlessOverWSHandler(request, env) {
       socket.readable.pipeTo(new WritableStream({
         write(chunk) { server.send(chunk); }
       }));
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      server.close();
+    }
   });
 
   return new Response(null, { status: 101, webSocket: client });
-      }
+}
