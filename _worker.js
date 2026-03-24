@@ -54,7 +54,7 @@ async function vlessOverWSHandler(request, env) {
     }
 
     const reader = new Uint8Array(data);
-    if (reader[0] !== 0) return; // VLESS version check
+    if (reader[0] !== 0) return;
 
     const addressLength = reader[18];
     const address = new TextDecoder().decode(reader.slice(19, 19 + addressLength));
@@ -70,4 +70,4 @@ async function vlessOverWSHandler(request, env) {
   });
 
   return new Response(null, { status: 101, webSocket: client });
-    }
+      }
