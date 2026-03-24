@@ -3,7 +3,7 @@ main = "_worker.js"
 compatibility_date = "2024-01-01"
 
 [[routes]]
-pattern = "mm.ttsm.eu.cc"
+pattern = "mm3.ttsm.gv.uy"
 custom_domain = true
 
 [vars]
