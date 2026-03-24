@@ -3,9 +3,9 @@ main = "_worker.js"
 compatibility_date = "2024-01-01"
 
 [[routes]]
-pattern = "mm3.kktmm.qzz.io"
+pattern = "mm3.kktmm.qzz.io/*"
 custom_domain = true
 
 [vars]
 UUID = "56b1cbec-9519-4ead-9643-05f240a92107"
-PROXYIP = ""
+PROXYIP = "147.185.161.34"
