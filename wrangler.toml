@@ -3,7 +3,7 @@ main = "_worker.js"
 compatibility_date = "2024-01-01"
 
 [[routes]]
-pattern = "mm3.kktmm.qzz.io/*"
+pattern = "mm3.kktmm.qzz.io"
 custom_domain = true
 
 [vars]
