@@ -1,7 +1,7 @@
 name = "my-edge-tunnel"
 main = "_worker.js"
-compatibility_date = "2026-3-23"
+compatibility_date = "2024-01-01"
 
 [vars]
-UUID = "YOUR-UUID"
+UUID = "56b1cbec-9519-4ead-9643-05f240a92107"
 PROXYIP = "cdn.anycast.eu.org"
