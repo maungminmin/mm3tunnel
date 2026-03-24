@@ -3,81 +3,61 @@ import { connect } from 'cloudflare:sockets';
 export default {
   async fetch(request, env) {
     const upgradeHeader = request.headers.get('Upgrade');
-    const userID = env.UUID;
-    const proxyIP = env.PROXYIP;
-    const hostName = request.headers.get('Host');
-
-    if (!upgradeHeader || upgradeHeader !== 'websocket') {
-      const vlessLink = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#Cloudflare-VLESS`;
-      
-      const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-          <title>Node Dashboard</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <style>
-              body { margin: 0; background: #0f172a; color: #f8fafc; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-              .card { background: #1e293b; padding: 2rem; border-radius: 1.5rem; text-align: center; max-width: 400px; width: 90%; border: 1px solid #334155; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); }
-              .qr-code { background: white; padding: 10px; border-radius: 10px; margin: 1.5rem 0; width: 200px; height: 200px; display: inline-block; }
-              .config-box { background: #0f172a; padding: 10px; border-radius: 8px; font-size: 0.75rem; word-break: break-all; color: #38bdf8; border: 1px dashed #334155; margin-top: 10px; }
-              h1 { font-size: 1.2rem; color: #38bdf8; margin-bottom: 0.5rem; }
-              p { font-size: 0.8rem; color: #94a3b8; margin: 0; }
-          </style>
-      </head>
-      <body>
-          <div class="card">
-              <h1>System Online</h1>
-              <p>Domain: ${hostName}</p>
-              <div class="qr-code">
-                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(vlessLink)}" alt="QR Code">
-              </div>
-              <div class="config-box">${vlessLink}</div>
-          </div>
-      </body>
-      </html>`;
-      return new Response(html, { headers: { 'Content-Type': 'text/html' } });
+    if (upgradeHeader === 'websocket') {
+      return await vlessOverWS(request, env);
     }
-    return await handleVLESS(request, proxyIP);
+    
+    // Dashboard UI
+    const host = request.headers.get('Host');
+    const uuid = env.UUID || '56b1cbec-9519-4ead-9643-05f240a92107';
+    const link = `vless://${uuid}@${host}:443?encryption=none&security=tls&sni=${host}&fp=randomized&type=ws&host=${host}&path=%2F%3Fed%3D2048#Myanmar-Bypass`;
+    
+    return new Response(`
+      <html>
+        <body style="background:#111; color:#0f0; font-family:monospace; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh;">
+          <h2 style="color:#fff;">NODE STATUS: ONLINE</h2>
+          <div style="background:#fff; padding:10px; border-radius:5px;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}">
+          </div>
+          <p style="word-break:break-all; width:80%; margin-top:20px; color:#aaa;">${link}</p>
+        </body>
+      </html>`, { headers: { 'Content-Type': 'text/html' } });
   }
 };
 
-async function handleVLESS(request, proxyIP) {
+async function vlessOverWS(request, env) {
   const webSocketPair = new WebSocketPair();
   const [client, server] = Object.values(webSocketPair);
   server.accept();
 
-  let remoteSocketWraper = { value: null };
+  let remoteSocket = null;
+  const proxyIP = env.PROXYIP || 'cdn-all.xn--b6gac.eu.org';
 
   server.addEventListener('message', async ({ data }) => {
-    if (remoteSocketWraper.value) {
-      const writer = remoteSocketWraper.value.writable.getWriter();
+    if (remoteSocket) {
+      const writer = remoteSocket.writable.getWriter();
       await writer.write(data);
       writer.releaseLock();
       return;
     }
 
-    const reader = new Uint8Array(data);
-    if (reader[0] !== 0) return;
-    const addressLength = reader[18];
-    const port = (reader[19 + addressLength] << 8) | reader[19 + addressLength + 1];
+    // Parse VLESS Header
+    const buffer = new Uint8Array(data);
+    if (buffer[0] !== 0) return; // Version check
 
+    const port = (buffer[19 + buffer[18]] << 8) | buffer[19 + buffer[18] + 1];
+    
     try {
-      const socket = connect({ hostname: proxyIP, port: port });
-      remoteSocketWraper.value = socket;
-      socket.readable.pipeTo(new WritableStream({
+      remoteSocket = connect({ hostname: proxyIP, port: port });
+      remoteSocket.readable.pipeTo(new WritableStream({
         write(chunk) { server.send(chunk); },
         close() { server.close(); },
         abort() { server.close(); }
       })).catch(() => server.close());
-    } catch (e) {
+    } catch (err) {
       server.close();
     }
   });
 
-  server.addEventListener('close', () => {
-    if (remoteSocketWraper.value) remoteSocketWraper.value.close();
-  });
-
   return new Response(null, { status: 101, webSocket: client });
-                                         }
+    }
