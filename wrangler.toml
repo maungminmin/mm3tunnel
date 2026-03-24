@@ -8,4 +8,4 @@ custom_domain = true
 
 [vars]
 UUID = "56b1cbec-9519-4ead-9643-05f240a92107"
-PROXYIP = "193.227.99.71"
+PROXYIP = "104.16.148.1"
