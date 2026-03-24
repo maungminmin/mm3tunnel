@@ -1,11 +1,12 @@
 name = "my-edge-tunnel"
 main = "_worker.js"
 compatibility_date = "2024-01-01"
+compatibility_flags = [ "nodejs_compat" ]
 
 [[routes]]
-pattern = "ksm.kktmm.qzz.io"
+pattern = "ms.kktmm.qzz.io"
 custom_domain = true
 
 [vars]
-UUID = "56b1cbec-9519-4ead-9643-05f240a92107"
-PROXYIP = "147.185.161.34"
+UUID = ""
+PROXYIP = ""
